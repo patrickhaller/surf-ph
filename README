@@ -1,0 +1,42 @@
+surf - simple webkit-based browser
+==================================
+surf is a simple Web browser based on WebKit/GTK+.
+This has my customizations:
+	Act more like tabs in FF or chrome
+		Load new clients in the background
+		On window close, raise the next client
+	Download using webkit, not wget
+	Vi mode by default 
+		i to insert text
+		Esc to return to browse mode
+	Emacs mode optional
+		set env SURF_EMACS=yes
+	Functions + keybindings for window actions
+		t - create new window
+		q - destroy current window
+		Q - exit
+	
+
+And it includes ssl.patch to show untrusted ssl sites
+And it disables spatial navigation by default
+
+Requirements
+------------
+In order to build surf you need GTK+ and Webkit/GTK+ header files.
+
+
+Installation
+------------
+Edit config.mk to match your local setup (surf is installed into
+the /usr/local namespace by default).
+
+Afterwards enter the following command to build and install surf (if
+necessary as root):
+
+    make clean install
+
+
+Running surf
+------------
+run
+	surf [URL]
