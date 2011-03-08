@@ -336,27 +336,47 @@ gotheaders(SoupMessage *msg, gpointer v) {
 	soup_cookies_free(l);
 }
 
+
+
+void /* mostly from uzbl */
+downloadstatus(WebKitDownload *download, GParamSpec *pspec, gpointer user_data) {
+	WebKitDownloadStatus status;
+	(void) pspec; (void) user_data;
+
+	g_object_get(download, "status", &status, NULL);
+
+	switch(status) {
+		case WEBKIT_DOWNLOAD_STATUS_CREATED:
+		case WEBKIT_DOWNLOAD_STATUS_STARTED:
+		case WEBKIT_DOWNLOAD_STATUS_ERROR:
+		case WEBKIT_DOWNLOAD_STATUS_CANCELLED:
+			return; /* these are irrelevant */
+		case WEBKIT_DOWNLOAD_STATUS_FINISHED:
+			{
+				char *src, *dst;
+				dst = g_strconcat(getenv("HOME"), "/", download_dir, "/",
+						(char *) webkit_download_get_suggested_filename(download), NULL
+						);
+				src = g_strconcat(dst, ".part", NULL);
+				rename(src, dst);
+				g_free(src); g_free(dst);
+			}
+	}
+}
+
 gboolean
 initdownload(WebKitWebView *view, WebKitDownload *o, Client *c) {
-	//Arg arg;
-	gchar *f;
-	char d[1024];
-	FILE *l;
+	char *d;
 
 	updatewinid(c);
-
-	f = (gchar *)webkit_download_get_suggested_filename(o);
-	snprintf(d, 1020, "file://%s/%s", getenv("HOME"), (char *)f );
-	l = fopen("/tmp/webkit.log", "a");
-	fprintf(l, "downloading to %s\n", d);
-	webkit_download_set_destination_uri(o, (gchar *)&d);
-	f = (gchar *)webkit_download_get_destination_uri(o);
-	fprintf(l, "  confirmed downloading to %s\n", d);
-	fclose(l);
+	g_signal_connect(o, "notify::status", G_CALLBACK(downloadstatus), NULL);
+	d = g_strconcat("file://", getenv("HOME"), "/", download_dir, "/",
+			(char *)webkit_download_get_suggested_filename(o),
+			".part", NULL
+			);
+	webkit_download_set_destination_uri(o, d);
 	webkit_download_start(o);
-	//webkit_web_view_load_uri(c->view, webkit_download_get_uri(o) );
-	//arg = (Arg)DOWNLOAD((char *)webkit_download_get_uri(o));
-	//spawn(c, &arg);
+	g_free(d);
 	return TRUE;
 }
 
