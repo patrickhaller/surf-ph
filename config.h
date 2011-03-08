@@ -7,6 +7,7 @@ static char   *useragents[]     = {
 static char   *useragent        =
 	"Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US) AppleWebKit/534.21 (KHTML, like Gecko) Chrome/11.0.682.0 Safari/534.21";
 
+static char   *download_dir     = "tmp/downloads"; // in your homedir
 static char   *progress         = "#000000";
 static char   *progress_untrust = "#FF0000";
 static char   *progress_trust   = "#00FF00";
