@@ -1,5 +1,12 @@
 /* modifier 0 means no modifier */
-static char   *useragent        = "Surf/"VERSION" (X11; U; Unix; en-US) AppleWebKit/531.2+ Compatible (Safari)";
+static char   *useragents[]     = {
+	//"Surf/"VERSION" (X11; U; Unix; en-US) AppleWebKit/531.2+ Compatible (Safari)",
+	"Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US) AppleWebKit/534.21 (KHTML, like Gecko) Chrome/11.0.682.0 Safari/534.21",
+	"Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
+};
+static char   *useragent        =
+	"Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US) AppleWebKit/534.21 (KHTML, like Gecko) Chrome/11.0.682.0 Safari/534.21";
+
 static char   *progress         = "#000000";
 static char   *progress_untrust = "#FF0000";
 static char   *progress_trust   = "#00FF00";
@@ -33,9 +40,22 @@ static void ttfn(Client *c, const Arg *arg ) {
 static void n00b(Client *c, const Arg *arg ) {
 	newclient();
 }
+static void tricksy( Client *c, const Arg *arg) {
+	WebKitWebSettings *settings;
+	gboolean is_tricksy = *(gboolean *)arg;
+
+	settings = webkit_web_view_get_settings(c->view);
+	if (is_tricksy)
+		useragent = useragents[1];
+	else
+		useragent = useragents[0];
+	g_object_set(G_OBJECT(settings), "user-agent", useragent, NULL);
+}
 
 static Key keys[] = {
     /* modifier               keyval         function   arg                                */
+    {  MODKEY|GDK_SHIFT_MASK, GDK_z,         tricksy,   {.b=TRUE}                          },
+    {  MODKEY,                GDK_z,         tricksy,   {.b=FALSE}                         },
     {  MODKEY,                GDK_t,         n00b,      {0}                                },
     {  MODKEY|GDK_SHIFT_MASK, GDK_r,         reload,    {.b=TRUE}                          },
     {  MODKEY,                GDK_r,         reload,    {.b=FALSE}                         },
