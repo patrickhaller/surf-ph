@@ -1,11 +1,11 @@
 /* modifier 0 means no modifier */
 static char   *useragents[]     = {
 	//"Surf/"VERSION" (X11; U; Unix; en-US) AppleWebKit/531.2+ Compatible (Safari)",
-	"Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US) AppleWebKit/534.21 (KHTML, like Gecko) Chrome/11.0.682.0 Safari/534.21",
+	"Mozilla/5.0 (X11; Linux x86_64; rv:2.0b9pre) Gecko/20110111 Firefox/4.0b9pre",
 	"Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
 };
 static char   *useragent        =
-	"Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US) AppleWebKit/534.21 (KHTML, like Gecko) Chrome/11.0.682.0 Safari/534.21";
+	"Mozilla/5.0 (X11; Linux x86_64; rv:2.0b9pre) Gecko/20110111 Firefox/4.0b9pre";
 
 static char   *download_dir     = "tmp/downloads"; // in your homedir
 static char   *progress         = "#000000";
