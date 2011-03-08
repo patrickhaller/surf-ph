@@ -15,6 +15,7 @@ This has my customizations:
 		t - create new window
 		q - destroy current window
 		Q - exit
+	User-agent switching
 	
 
 And it includes ssl.patch to show untrusted ssl sites
