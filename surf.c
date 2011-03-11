@@ -610,10 +610,11 @@ newrequest(SoupSession *s, SoupMessage *msg, gpointer v) {
 	SoupURI *uri;
 	const char *c;
 
-	soup_message_headers_remove(h, "Cookie");
 	uri = soup_message_get_uri(msg);
-	if((c = getcookies(uri)))
+	if((c = getcookies(uri))) {
+		soup_message_headers_remove(h, "Cookie");
 		soup_message_headers_append(h, "Cookie", c);
+	}
 	g_signal_connect_after(G_OBJECT(msg), "got-headers", G_CALLBACK(gotheaders), NULL);
 }
 
@@ -728,6 +729,7 @@ void
 setcookie(SoupCookie *c) {
 	int lock;
 
+	//fprintf(stderr, "setcookie: name %s val %s\n", c->name, c->value);
 	lock = open(cookiefile, 0);
 	flock(lock, LOCK_EX);
 	SoupDate *e;
