@@ -43,6 +43,13 @@ typedef struct Client {
 	gboolean zoomed;
 } Client;
 
+typedef struct Download {
+	WebKitDownload *download;
+	Client *client;
+	gboolean is_done;
+	struct Download *next;
+} Download;
+
 typedef struct {
 	char *label;
 	void (*func)(Client *c, const Arg *arg);
@@ -64,6 +71,7 @@ typedef struct {
 static Display *dpy;
 static Atom atoms[AtomLast];
 static Client *clients = NULL;
+static Download *downloads = NULL;
 static GdkNativeWindow embed = 0;
 static gboolean showxid = FALSE;
 static char winid[64];
@@ -217,6 +225,19 @@ decidewindow(WebKitWebView *view, WebKitWebFrame *f, WebKitNetworkRequest *r, We
 }
 
 void
+downloadexit(Client *c) {
+	Download *d;
+
+	for (;;) {
+		for (d = downloads; d != NULL; d = d->next) {
+			if (d->client == c && d->is_done == FALSE) {
+				sleep(1);
+			}
+		}
+	}
+}
+
+void
 destroyclient(Client *c) {
 	Client *p;
 
@@ -336,17 +357,32 @@ gotheaders(SoupMessage *msg, gpointer v) {
 	soup_cookies_free(l);
 }
 
+Download *
+finddownload(WebKitDownload *o) {
+	Download *d;
 
+	for (d = downloads; d != NULL && d->download != o ; d = d->next );
+	return d;
+}
 
 void /* mostly from uzbl */
 downloadstatus(WebKitDownload *download, GParamSpec *pspec, gpointer user_data) {
 	WebKitDownloadStatus status;
+	Download *d;
 	(void) pspec; (void) user_data;
 
+	d = finddownload(download);
+	if (d == NULL) {
+		fprintf(stderr, "lost download?\n");
+		return;
+	}
 	g_object_get(download, "status", &status, NULL);
 
 	switch(status) {
 		case WEBKIT_DOWNLOAD_STATUS_CREATED:
+			d->client->progress = 0;
+			update(d->client);
+			break;
 		case WEBKIT_DOWNLOAD_STATUS_STARTED:
 		case WEBKIT_DOWNLOAD_STATUS_ERROR:
 		case WEBKIT_DOWNLOAD_STATUS_CANCELLED:
@@ -358,25 +394,60 @@ downloadstatus(WebKitDownload *download, GParamSpec *pspec, gpointer user_data) 
 						(char *) webkit_download_get_suggested_filename(download), NULL
 						);
 				src = g_strconcat(dst, ".part", NULL);
+				unlink(dst);
 				rename(src, dst);
 				g_free(src); g_free(dst);
+				d->is_done = TRUE;
+				d->client->progress = 100;
+				update(d->client);
 			}
 	}
 }
 
+void
+downloadprogress(WebKitDownload *download, GParamSpec *pspec, gpointer user_data) {
+	(void) pspec; (void) user_data;
+	Download *d;
+	gdouble progress;
+
+	g_object_get(download, "progress", &progress, NULL);
+	d = finddownload(download);
+	if (d == NULL)
+		return;
+	if ( (d->client->progress = (int)(progress * 100)) == 0)
+		d->client->progress = 1;
+	update(d->client);
+}
+
 gboolean
 initdownload(WebKitWebView *view, WebKitDownload *o, Client *c) {
-	char *d;
+	char *f;
+	Download *d;
 
-	updatewinid(c);
+	if(!(d = calloc(1, sizeof(Download))))
+		die("Cannot malloc!\n");
+	d->next = downloads;
+	d->client = c;
+	d->download = o;
+	d->is_done = FALSE;
+	downloads = d;
+	d->client->progress = 1;
+	update(d->client);
 	g_signal_connect(o, "notify::status", G_CALLBACK(downloadstatus), NULL);
-	d = g_strconcat("file://", getenv("HOME"), "/", download_dir, "/",
+	g_signal_connect(o, "notify::progress", G_CALLBACK(downloadprogress), NULL);
+	f = g_strconcat(getenv("HOME"), "/", download_dir, "/",
 			(char *)webkit_download_get_suggested_filename(o),
 			".part", NULL
 			);
-	webkit_download_set_destination_uri(o, d);
+	unlink(f);
+	g_free(f);
+	f = g_strconcat("file://", getenv("HOME"), "/", download_dir, "/",
+			(char *)webkit_download_get_suggested_filename(o),
+			".part", NULL
+			);
+	webkit_download_set_destination_uri(o, f);
 	webkit_download_start(o);
-	g_free(d);
+	g_free(f);
 	return TRUE;
 }
 

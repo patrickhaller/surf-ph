@@ -8,7 +8,7 @@ static char   *useragent        =
 	"Mozilla/5.0 (X11; Linux x86_64; rv:2.0b9pre) Gecko/20110111 Firefox/4.0b9pre";
 
 static char   *download_dir     = "tmp/downloads"; // in your homedir
-static char   *progress         = "#000000";
+static char   *progress         = "#8888FF";
 static char   *progress_untrust = "#FF0000";
 static char   *progress_trust   = "#00FF00";
 static char   *stylefile        = ".surf/style.css";
