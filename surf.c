@@ -47,6 +47,8 @@ typedef struct Download {
 	WebKitDownload *download;
 	Client *client;
 	gboolean is_done;
+	char *filename;
+	char *filename_partial;
 	struct Download *next;
 } Download;
 
@@ -346,10 +348,8 @@ geturi(Client *c) {
 
 void
 gotheaders(SoupMessage *msg, gpointer v) {
-	SoupURI *uri;
 	GSList *l, *p;
 
-	uri = soup_message_get_uri(msg);
 	for(p = l = soup_cookies_from_response(msg); p;
 		p = g_slist_next(p))  {
 		setcookie((SoupCookie *)p->data);
@@ -357,25 +357,16 @@ gotheaders(SoupMessage *msg, gpointer v) {
 	soup_cookies_free(l);
 }
 
-Download *
-finddownload(WebKitDownload *o) {
-	Download *d;
-
-	for (d = downloads; d != NULL && d->download != o ; d = d->next );
-	return d;
-}
-
-void /* mostly from uzbl */
+int /* mostly from uzbl */
 downloadstatus(WebKitDownload *download, GParamSpec *pspec, gpointer user_data) {
 	WebKitDownloadStatus status;
 	Download *d;
-	(void) pspec; (void) user_data;
 
-	d = finddownload(download);
-	if (d == NULL) {
-		fprintf(stderr, "lost download?\n");
-		return;
-	}
+	for (d = downloads; d != NULL && d->download != download ; d = d->next )
+		;
+	if (d == NULL)
+		return fprintf(stderr, "lost download?\n"), -1;
+
 	g_object_get(download, "status", &status, NULL);
 
 	switch(status) {
@@ -386,32 +377,28 @@ downloadstatus(WebKitDownload *download, GParamSpec *pspec, gpointer user_data) 
 		case WEBKIT_DOWNLOAD_STATUS_STARTED:
 		case WEBKIT_DOWNLOAD_STATUS_ERROR:
 		case WEBKIT_DOWNLOAD_STATUS_CANCELLED:
-			return; /* these are irrelevant */
-		case WEBKIT_DOWNLOAD_STATUS_FINISHED:
-			{
-				char *src, *dst;
-				dst = g_strconcat(getenv("HOME"), "/", download_dir, "/",
-						(char *) webkit_download_get_suggested_filename(download), NULL
-						);
-				src = g_strconcat(dst, ".part", NULL);
-				unlink(dst);
-				rename(src, dst);
-				g_free(src); g_free(dst);
-				d->is_done = TRUE;
-				d->client->progress = 100;
-				update(d->client);
-			}
+			break; /* these are irrelevant */
+		case WEBKIT_DOWNLOAD_STATUS_FINISHED: {
+			unlink(d->filename);
+			rename(d->filename_partial, d->filename);
+			g_free(d->filename_partial);
+			g_free(d->filename);
+			d->is_done = TRUE;
+			d->client->progress = 100;
+			update(d->client);
+		}
 	}
+	return 0;
 }
 
 void
 downloadprogress(WebKitDownload *download, GParamSpec *pspec, gpointer user_data) {
-	(void) pspec; (void) user_data;
 	Download *d;
 	gdouble progress;
 
 	g_object_get(download, "progress", &progress, NULL);
-	d = finddownload(download);
+	for (d = downloads; d != NULL && d->download != download ; d = d->next )
+		;
 	if (d == NULL)
 		return;
 	if ( (d->client->progress = (int)(progress * 100)) == 0)
@@ -424,7 +411,7 @@ initdownload(WebKitWebView *view, WebKitDownload *o, Client *c) {
 	char *f;
 	Download *d;
 
-	if(!(d = calloc(1, sizeof(Download))))
+	if (!(d = malloc(sizeof(Download))))
 		die("Cannot malloc!\n");
 	d->next = downloads;
 	d->client = c;
@@ -435,16 +422,13 @@ initdownload(WebKitWebView *view, WebKitDownload *o, Client *c) {
 	update(d->client);
 	g_signal_connect(o, "notify::status", G_CALLBACK(downloadstatus), NULL);
 	g_signal_connect(o, "notify::progress", G_CALLBACK(downloadprogress), NULL);
-	f = g_strconcat(getenv("HOME"), "/", download_dir, "/",
-			(char *)webkit_download_get_suggested_filename(o),
-			".part", NULL
-			);
-	unlink(f);
-	g_free(f);
-	f = g_strconcat("file://", getenv("HOME"), "/", download_dir, "/",
-			(char *)webkit_download_get_suggested_filename(o),
-			".part", NULL
-			);
+	d->filename = g_strconcat(download_dir, "/",
+		(char *)webkit_download_get_suggested_filename(o), NULL
+	);
+	d->filename_partial = g_strconcat(d->filename, ".part", NULL);
+	unlink(d->filename_partial);
+
+	f = g_strconcat("file://", d->filename_partial, NULL);
 	webkit_download_set_destination_uri(o, f);
 	webkit_download_start(o);
 	g_free(f);
