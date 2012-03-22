@@ -227,19 +227,6 @@ decidewindow(WebKitWebView *view, WebKitWebFrame *f, WebKitNetworkRequest *r, We
 }
 
 void
-downloadexit(Client *c) {
-	Download *d;
-
-	for (;;) {
-		for (d = downloads; d != NULL; d = d->next) {
-			if (d->client == c && d->is_done == FALSE) {
-				sleep(1);
-			}
-		}
-	}
-}
-
-void
 destroyclient(Client *c) {
 	Client *p;
 
@@ -361,6 +348,8 @@ int /* mostly from uzbl */
 downloadstatus(WebKitDownload *download, GParamSpec *pspec, gpointer user_data) {
 	WebKitDownloadStatus status;
 	Download *d;
+	Arg arg;
+
 
 	for (d = downloads; d != NULL && d->download != download ; d = d->next )
 		;
@@ -381,6 +370,8 @@ downloadstatus(WebKitDownload *download, GParamSpec *pspec, gpointer user_data) 
 		case WEBKIT_DOWNLOAD_STATUS_FINISHED: {
 			unlink(d->filename);
 			rename(d->filename_partial, d->filename);
+			arg = (Arg)OPENFILE(d->filename);
+			spawn(d->client, &arg);
 			g_free(d->filename_partial);
 			g_free(d->filename);
 			d->is_done = TRUE;

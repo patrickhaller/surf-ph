@@ -21,6 +21,8 @@ static time_t sessiontime       = 3600;
 #define SURF_SIZE_X 1024
 #define SURF_SIZE_Y 600
 
+#define MARKS { .v = (char *[]){ "javascript:document.location.replace('http://haller.ws/marks/mark.cgi?' + document.location) " } }
+
 #define SETPROP(p, q)     { .v = (char *[]){ "/bin/sh", "-c", \
 	"prop=\"`xprop -id $2 $0 | cut -d '\"' -f 2 | dmenu -fn '-monotype-andale mono-medium-r-normal--0-0-0-0-c-0-iso8859-1' |"\
     "sed -e 's!^ !shortcuts.haller.ws/?!' -e 's/ /+/g' `\" &&" \
@@ -30,7 +32,19 @@ static time_t sessiontime       = 3600;
 	.v = (char *[]){ "/bin/sh", "-c", \
 	"xterm -geometry 400x100 -e \"echo $PWD; echo wget --load-cookies ~/.surf/cookies.txt '$0'; /bin/bash\"", \
 	d, NULL } }
+#define OPENFILE(d) { .v = (char *[]){ "/bin/bash", "-c", "[[ \"$0\" =~ pdf$ ]] && exec xpdf \"$0\"", d, NULL } }
 #define MODKEY GDK_CONTROL_MASK
+
+static void js_eval(Client *c, const Arg *arg) {
+	JSStringRef jsscript;
+	JSValueRef exception = NULL;
+	WebKitWebFrame *frame;
+
+	frame = webkit_web_view_get_main_frame(c->view);
+	JSContextRef js = webkit_web_frame_get_global_context(frame);
+	jsscript = JSStringCreateWithUTF8CString( (((char **)arg->v)[0] ));
+	JSEvaluateScript(js, jsscript, JSContextGetGlobalObject(js), NULL, 0, &exception);
+}
 
 static void goodbye(Client *c, const Arg *arg ) {
 	exit(0);
@@ -76,6 +90,7 @@ static Key keys[] = {
     {  0,                     GDK_Escape,    stop,      {0}                                },
     {  MODKEY,                GDK_o,         source,    {0}                                },
     {  MODKEY,                GDK_g,         spawn,     SETPROP("_SURF_URI","_SURF_GO")    },
+    {  MODKEY,                GDK_m,         js_eval,   MARKS                              },
     {  MODKEY,                GDK_slash,     spawn,     SETPROP("_SURF_FIND","_SURF_FIND") },
     {  MODKEY,                GDK_n,         find,      {.b=TRUE}                          },
     {  GDK_SHIFT_MASK,        GDK_n,         find,      {.b=FALSE}                         },
