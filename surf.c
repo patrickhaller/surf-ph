@@ -15,6 +15,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <strings.h>
 #include <webkit/webkit.h>
 #include <glib/gstdio.h>
 #include <JavaScriptCore/JavaScript.h>
@@ -413,9 +414,11 @@ initdownload(WebKitWebView *view, WebKitDownload *o, Client *c) {
 	update(d->client);
 	g_signal_connect(o, "notify::status", G_CALLBACK(downloadstatus), NULL);
 	g_signal_connect(o, "notify::progress", G_CALLBACK(downloadprogress), NULL);
-	d->filename = g_strconcat(download_dir, "/",
-		(char *)webkit_download_get_suggested_filename(o), NULL
-	);
+	d->filename = (char *)webkit_download_get_suggested_filename(o);
+	while ( (f = index(d->filename, '/')) != NULL) {
+		*f = '-';
+	}
+	d->filename = g_strconcat(download_dir, d->filename, NULL);
 	d->filename_partial = g_strconcat(d->filename, ".part", NULL);
 	unlink(d->filename_partial);
 

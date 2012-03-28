@@ -32,7 +32,7 @@ static time_t sessiontime       = 3600;
 	.v = (char *[]){ "/bin/sh", "-c", \
 	"xterm -geometry 400x100 -e \"echo $PWD; echo wget --load-cookies ~/.surf/cookies.txt '$0'; /bin/bash\"", \
 	d, NULL } }
-#define OPENFILE(d) { .v = (char *[]){ "/bin/bash", "-c", "[[ \"$0\" =~ pdf$ ]] && exec xpdf \"$0\"", d, NULL } }
+#define OPENFILE(d) { .v = (char *[]){ "/bin/bash", "-c", "[[ \"$0\" =~ pdf$ ]] && xpdf \"$0\" ", d, d, NULL } }
 #define MODKEY GDK_CONTROL_MASK
 
 static void js_eval(Client *c, const Arg *arg) {
