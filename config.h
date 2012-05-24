@@ -67,6 +67,30 @@ static void tricksy( Client *c, const Arg *arg) {
 	g_object_set(G_OBJECT(settings), "user-agent", useragent, NULL);
 }
 
+void
+scrolli(GtkAdjustment *a, const Arg *arg) {
+	gdouble v;
+
+	v = gtk_adjustment_get_value(a);
+	switch (arg->i){
+		case +10000:
+		case -10000:
+			v += gtk_adjustment_get_page_increment(a) * (arg->i / 10000); break;
+		case +20000:
+		case -20000:
+		default:
+			v += gtk_adjustment_get_step_increment(a) * arg->i;
+	}
+	v = MAX(v, 0.0);
+	v = MIN(v, gtk_adjustment_get_upper(a) - gtk_adjustment_get_page_size(a));
+	gtk_adjustment_set_value(a, v);
+}
+
+void
+scroll_h(Client *c, const Arg *arg) {
+	scrolli(gtk_scrolled_window_get_hadjustment(GTK_SCROLLED_WINDOW(c->scroll)), arg);
+}
+
 static Key keys[] = {
     /* modifier               keyval         function   arg                                */
     {  MODKEY|GDK_SHIFT_MASK, GDK_z,         tricksy,   {.b=TRUE}                          },
@@ -82,9 +106,10 @@ static Key keys[] = {
     {  MODKEY|GDK_SHIFT_MASK, GDK_j,         zoom,      {.i=-1}                            },
     {  MODKEY|GDK_SHIFT_MASK, GDK_k,         zoom,      {.i=+1}                            },
     {  MODKEY|GDK_SHIFT_MASK, GDK_i,         zoom,      {.i=0}                             },
-    {  MODKEY,                GDK_h,         navigate,  {.i=-1}                            },
     {  MODKEY,                GDK_BackSpace, navigate,  {.i=-1}                            },
-    {  MODKEY,                GDK_l,         navigate,  {.i=+1}                            },
+    {  MODKEY|GDK_SHIFT_MASK, GDK_BackSpace, navigate,  {.i=+1}                            },
+    {  MODKEY,                GDK_h,         scroll_h,  {.i=-1}                            },
+    {  MODKEY,                GDK_l,         scroll_h,  {.i=+1}                            },
     {  MODKEY,                GDK_j,         scroll,    {.i=+1}                            },
     {  MODKEY,                GDK_k,         scroll,    {.i=-1}                            },
     {  0,                     GDK_Escape,    stop,      {0}                                },
