@@ -18,8 +18,8 @@ static char   *cafile           = "/etc/ssl/certs/ca-certificates.crt";
 static char   *strictssl        = FALSE;
 static time_t sessiontime       = 3600;
 #define NOBACKGROUND 0
-#define SURF_SIZE_X 1024
-#define SURF_SIZE_Y 600
+#define SURF_SIZE_X 1366
+#define SURF_SIZE_Y 768
 
 #define MARKS { .v = (char *[]){ "javascript:document.location.replace('http://haller.ws/marks/mark.cgi?' + document.location) " } }
 
@@ -118,5 +118,5 @@ static Key keys[] = {
     {  MODKEY,                GDK_m,         js_eval,   MARKS                              },
     {  MODKEY,                GDK_slash,     spawn,     SETPROP("_SURF_FIND","_SURF_FIND") },
     {  MODKEY,                GDK_n,         find,      {.b=TRUE}                          },
-    {  GDK_SHIFT_MASK,        GDK_n,         find,      {.b=FALSE}                         },
+    {  MODKEY|GDK_SHIFT_MASK, GDK_n,         find,      {.b=FALSE}                         },
 };
