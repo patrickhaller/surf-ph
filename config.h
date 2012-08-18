@@ -24,7 +24,7 @@ static time_t sessiontime       = 3600;
 #define MARKS { .v = (char *[]){ "javascript:document.location.replace('http://haller.ws/marks/mark.cgi?' + document.location) " } }
 
 #define SETPROP(p, q)     { .v = (char *[]){ "/bin/sh", "-c", \
-	"prop=\"`xprop -id $2 $0 | cut -d '\"' -f 2 | dmenu -fn '-monotype-andale mono-medium-r-normal--0-0-0-0-c-0-iso8859-1' |"\
+	"prop=\"`xprop -id $2 $0 | cut -d '\"' -f 2 | dmenu.sh |"\
     "sed -e 's!^ !shortcuts.haller.ws/?!' -e 's/ /+/g' `\" &&" \
 	"xprop -id $2 -f $1 8s -set $1 \"$prop\"", \
 	p, q, winid, NULL } }
